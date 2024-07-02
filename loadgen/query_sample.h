@@ -36,6 +36,7 @@ constexpr ResponseId kResponseIdReserved = 0;
 
 /// \brief An index into the QuerySampleLibrary corresponding to a
 /// single sample.
+// 为size_t创建类型别名QuerySampleIndex
 typedef size_t QuerySampleIndex;
 
 /// \brief Represents the smallest unit of input inference can run on.

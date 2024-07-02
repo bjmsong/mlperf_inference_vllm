@@ -23,8 +23,8 @@ cd ..; pip install --force-reinstall loadgen/dist/`ls -r loadgen/dist/ | head -n
 ```
 
 ## Run the Benchmark
-cd gpt-j
 ```bash
+cd gpt-j
 # 为了减少显存占用，把`backend_PyTorch.py`里面的num_beams设置为1（原本是4）
 # 为了避免运行时间过长，减小mlperf.conf中参数gptj.*.performance_sample_count_override、gptj.Offline.min_query_count
 python main.py --scenario=Offline --model-path=/root/autodl-tmp/model/checkpoint-final/ --dataset-path=data/cnn_eval.json --gpu --dtype float16 --max_examples=10

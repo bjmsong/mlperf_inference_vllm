@@ -23,8 +23,11 @@ int main(int argc, char* argv[]) {
     std::cerr << "Usage: " << argv[0] << " <include_regex> <exclude_regex>\n";
     return -1;
   }
+  // 构造正则表达式对象
   std::regex include_regex(argc >= 2 ? argv[1] : ".*");
   std::regex exclude_regex(argc >= 3 ? std::regex(argv[2]) : std::regex());
+  // 定义函数：过滤测试名称（必须匹配 include_regex 正则表达式，不能匹配 exclude_regex 正则表达式）
+  // & 符号表示捕获外部作用域中的所有变量
   auto test_filter = [&](const char* test_name) {
     return (std::regex_search(test_name, include_regex) &&
             !std::regex_search(test_name, exclude_regex));

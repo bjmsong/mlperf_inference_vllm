@@ -1159,6 +1159,7 @@ void StartTest(SystemUnderTest* sut, QuerySampleLibrary* qsl,
                const TestSettings& requested_settings,
                const LogSettings& log_settings,
                const std::string audit_config_filename) {
+  // 全局日志记录器
   GlobalLogger().StartIOThread();
 
   const std::string test_date_time = CurrentDateTimeISO8601();

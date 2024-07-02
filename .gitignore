@@ -6,3 +6,4 @@ loadgen/dist/
 loadgen/__pycache__/
 loadgen/mlperf_loadgen.egg-info/
 loadgen/generated/
+*/.cache/

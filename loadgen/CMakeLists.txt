@@ -9,7 +9,9 @@ message("mlperf_loadgen v${mlperf_loadgen_VERSION_MAJOR}.${mlperf_loadgen_VERSIO
 
 # Set build options. NB: CXX_STANDARD is supported since CMake 3.1.
 if (NOT MSVC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -W -Wall")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -W -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread --std=c++17 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif()
 # Extra build options can be specified by setting the MLPERF_LOADGEN_CXX_FLAGS variable
 if (MLPERF_LOADGEN_CXX_FLAGS)
@@ -67,6 +69,10 @@ endif()
 
 add_executable(benchmark benchmark/repro.cpp)
 target_link_libraries(benchmark PUBLIC mlperf_loadgen ${LIBS})
+
+add_library(mlperf_loadgen_tests_loadgen_test_main OBJECT tests/loadgen_test.h tests/loadgen_test_main.cc)
+add_executable(unittest tests/basic.cc)
+target_link_libraries(unittest PUBLIC mlperf_loadgen mlperf_loadgen_tests_loadgen_test_main ${LIBS})
 
 # Install library and headers.
 install(TARGETS mlperf_loadgen

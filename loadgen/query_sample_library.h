@@ -34,6 +34,7 @@ class QuerySampleLibrary {
   virtual ~QuerySampleLibrary() {}
 
   /// \brief A human readable name for the model.
+  // 纯虚函数：没有实现，必须在派生类中被重写
   virtual const std::string& Name() = 0;
 
   /// \brief Total number of samples in library.

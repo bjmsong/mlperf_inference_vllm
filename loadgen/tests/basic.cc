@@ -38,7 +38,7 @@ namespace unit_tests {
 /// the TestProxy concept.
 struct SystemUnderTestBasic : public mlperf::QuerySampleLibrary,
                               public mlperf::SystemUnderTest {
-  const std::string& Name() const override { return name_; }
+  const std::string& Name() override { return name_; }
 
   size_t TotalSampleCount() override { return total_sample_count_; }
   size_t PerformanceSampleCount() override { return performance_sample_count_; }
@@ -46,11 +46,13 @@ struct SystemUnderTestBasic : public mlperf::QuerySampleLibrary,
   void LoadSamplesToRam(
       const std::vector<mlperf::QuerySampleIndex>& samples) override {
     for (auto s : samples) {
+      // 索引为s的地方值加一
       samples_load_count_.at(s)++;
       loaded_samples_.push_back(s);
     }
     LoadSamplesToRamExt(samples);
   }
+  // 虚函数
   virtual void LoadSamplesToRamExt(
       const std::vector<mlperf::QuerySampleIndex>& samples) {}
 

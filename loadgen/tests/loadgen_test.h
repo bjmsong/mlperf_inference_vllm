@@ -30,6 +30,7 @@ limitations under the License.
   static Test::StaticRegistrant t##name##scenario(        \
       #name "_" #scenario, test, __VA_ARGS__, mlperf::TestScenario::scenario)
 
+// __VA_ARGS__: 表示可变数量的参数
 #define REGISTER_TEST_ALL_SCENARIOS(name, test, ...)                \
   REGISTER_TEST_SCENARIO(name, SingleStream, test, __VA_ARGS__);    \
   REGISTER_TEST_SCENARIO(name, MultiStream, test, __VA_ARGS__);     \
@@ -95,11 +96,13 @@ struct TestProxy {
 /// \brief A collection of methods for registering and running tests.
 class Test {
   /// \brief Maps registered test names to a callback.
+  // multimap: 一个键可以对应多个值
   using TestMap = std::multimap<const char*, std::function<void()>>;
 
   /// \brief The registered tests.
   /// \details Wraps a static local to avoid undefined initialization order
   /// and guarantee it is initialized before the first test registers itself.
+  // 静态方法：属于类
   static TestMap& tests() {
     static TestMap tests_;
     return tests_;
@@ -111,11 +114,16 @@ class Test {
     return test_fails_;
   }
 
- public:
+ public:  // 对外的接口
   /// \brief Registers a test before main() starts during static initialization.
+  // 结构体(StaticRegistrant)会在类(Test)的构造函数被调用时进行初始化
   struct StaticRegistrant {
+    // 构造函数
+    // 模板函数，接受任意数量的参数
     template <typename... Args>
+    // Args&& 可以绑定到左值或右值
     StaticRegistrant(Args&&... args) {
+      // 完美转发: 保持其原始的值类别（左值或右值）。避免了不必要的拷贝或移动操作，从而提高了效率。
       Test::Register(std::forward<Args>(args)...);
     }
   };
@@ -123,8 +131,12 @@ class Test {
   /// \brief Registers a test at runtime.
   template <typename TestF, typename... Args>
   static void Register(const char* name, TestF test, Args&&... args) {
+    // 创建函数对象：返回类型为 void 且不接受任何参数
+    // std::bind 是一个函数模板，它可以将函数与其参数绑定，生成一个新的函数对象。这个函数对象可以在将来调用时使用绑定的参数。它的主要作用是部分应用函数（即绑定部分参数），从而生成一个新的函数对象。
     std::function<void()> test_closure =
         std::bind(test, std::forward<Args>(args)...);
+    // 插入测试集合
+    // std::move -- 转换为右值
     tests().insert({std::move(name), std::move(test_closure)});
   }
 
@@ -145,10 +157,12 @@ class Test {
     for (size_t i = 0; i < enabled; i++) {
       const char* name = enabled_tests[i]->first;
       std::cout << "[" << (i + 1) << "/" << enabled << "] : " << name << " : ";
+      // 刷新输出流
       std::cout.flush();
+      // 将静态变量test_fails_重置为0
       test_fails() = 0;
       try {
-        enabled_tests[i]->second();  // Run the test.
+        enabled_tests[i]->second();  // Run the test. 调用TestProxy::operator()
       } catch (std::exception& e) {
         constexpr bool TestThrewException = true;
         FAIL_IF(TestThrewException) && FAIL_EXP(e.what());

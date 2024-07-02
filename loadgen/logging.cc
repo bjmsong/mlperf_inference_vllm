@@ -822,10 +822,13 @@ void Logger::CollectTlsLoggerStats(TlsLogger* tls_logger) {
   }
 }
 
+// 启动IO线程
 void Logger::StartIOThread() {
-  {
+  { 
+    // 加锁
     std::unique_lock<std::mutex> lock(io_thread_mutex_);
     keep_io_thread_alive_ = true;
+    // 解锁
   }
   io_thread_ = std::thread(&Logger::IOThread, this);
 }
