@@ -5,7 +5,7 @@ conda activate llm
 conda install mkl mkl-include -y
 conda install gperftools jemalloc==5.2.1 -c conda-forge -y
 pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118
-pip install transformers datasets evaluate accelerate simplejson nltk rouge_score pybind11
+pip install vllm transformers datasets evaluate accelerate simplejson nltk rouge_score pybind11
 ```
 
 ## build&install loadgen

@@ -26,7 +26,8 @@ PROMPT_DICT = {
 
 
 class Dataset():
-    def __init__(self, dataset_path, batch_size=1, pad_val=1, pad_max=196, total_count_override=None, perf_count_override=None):
+    def __init__(self, dataset_path, batch_size=1, pad_val=1, pad_max=196, total_count_override=None, 
+        perf_count_override=None):
         print("Constructing QSL")
 
         self.dataset = "cnn_dailymail"
@@ -39,7 +40,7 @@ class Dataset():
         self.tokenizer = get_transformer_autotokenizer(self.model_name)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.list_data_dict = utils.jload(self.dataset_path)
+        self.list_data_dict = utils.jload(self.dataset_path)[:total_count_override]
 
         prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
         # 在字符串中查找花括号 {} 中的占位符，并使用提供的字典中对应的键值对来替换占位符

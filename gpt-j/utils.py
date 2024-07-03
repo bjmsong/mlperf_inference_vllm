@@ -8,7 +8,7 @@ def _make_r_io_base(f, mode: str):
     return f
 
 def jload(f, mode="r"):
-    """Load a .json file into a dictionary."""
+    """Load a .json file into a dictionary or list."""
     f = _make_r_io_base(f, mode)
     jdict = json.load(f)
     f.close()

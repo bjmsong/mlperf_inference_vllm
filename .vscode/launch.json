@@ -1,3 +1,27 @@
+// debug python
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "python": "/root/miniconda3/envs/llm/bin/python",
+            "name": "Python: Current file",
+            "type": "python",
+            "request": "launch",
+            "program": "gpt-j/main.py",
+            "console": "integratedTerminal",
+            "args": [                
+                "--scenario=Offline", 
+                "--model-path=/root/autodl-tmp/model/checkpoint-final/",
+                "--dataset-path=gpt-j/data/cnn_eval.json",
+                "--dtype=bfloat16",
+                "--max_examples=10"
+            ]   
+        }
+    ]
+}
+
+
+// Python/C++联合debug
 // {
 //     "version": "0.2.0",
 //     "configurations": [
@@ -36,19 +60,21 @@
 //     ]
 // }
 
-{
-    // 使用 IntelliSense 了解相关属性。 
-    // 悬停以查看现有属性的描述。
-    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug",
-            "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/loadgen/build/unittest",
-            "args": ["AccuracyIncludesAllSamples_Offline"],
-        }
-    ]
-}
+
+// debug loadgen
+// {
+//     // 使用 IntelliSense 了解相关属性。 
+//     // 悬停以查看现有属性的描述。
+//     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "type": "lldb",
+//             "request": "launch",
+//             "name": "Debug",
+//             "cwd": "${workspaceFolder}",
+//             "program": "${workspaceFolder}/loadgen/build/unittest",
+//             "args": ["AccuracyIncludesAllSamples_Offline"],
+//         }
+//     ]
+// }
