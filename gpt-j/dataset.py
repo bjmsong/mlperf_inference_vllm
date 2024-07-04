@@ -27,17 +27,18 @@ PROMPT_DICT = {
 
 class Dataset():
     def __init__(self, dataset_path, batch_size=1, pad_val=1, pad_max=196, total_count_override=None, 
-        perf_count_override=None):
+        perf_count_override=None, model_path=None):
         print("Constructing QSL")
 
         self.dataset = "cnn_dailymail"
         self.model_name = "EleutherAI/gpt-j-6B"
+        self.model_path = model_path
         self.dataset_path = dataset_path
         self.batch_size = batch_size
         self.pad_val = pad_val
         self.pad_max = pad_max
 
-        self.tokenizer = get_transformer_autotokenizer(self.model_name)
+        self.tokenizer = get_transformer_autotokenizer(self.model_path)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.list_data_dict = utils.jload(self.dataset_path)[:total_count_override]

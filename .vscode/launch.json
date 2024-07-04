@@ -1,4 +1,3 @@
-// debug python
 {
     "version": "0.2.0",
     "configurations": [
@@ -13,8 +12,9 @@
                 "--scenario=Offline", 
                 "--model-path=/root/autodl-tmp/model/checkpoint-final/",
                 "--dataset-path=gpt-j/data/cnn_eval.json",
-                "--dtype=bfloat16",
-                "--max_examples=10"
+                "--gpu",
+                "--dtype=float16",
+                "--max_examples=100"
             ]   
         }
     ]

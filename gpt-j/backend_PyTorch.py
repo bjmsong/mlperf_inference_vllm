@@ -75,7 +75,7 @@ class SUT_base():
             pass
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name,
+            self.model_path,
             model_max_length=1919,
             padding_side="left",
             use_fast=False,)
@@ -102,11 +102,11 @@ class SUT_base():
         # Activates only when scenario is Offline and network mode is None
         for i in tqdm(range(len(query_samples))):
             index = query_samples[i].index
-            input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
-            input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]
-            text = self.qsl.data_object.sources[index]
+            input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index] # tensor, (batch_size, length)
+            input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index] # tensor, (batch_size, length)
+            # text = self.qsl.data_object.sources[index]  # str
             query = {
-                "input_text": text,
+                # "input_text": text,
                 "input_ids_tensor": input_ids_tensor.tolist(),
                 "input_masks_tensor": input_masks_tensor.tolist()
             }
@@ -183,6 +183,8 @@ class SUT_Server(SUT_base):
 
     def issue_queries(self, query_samples):
         # The issue queries function is called multiple times by the loadgen as per Poisson Distribution
+        print("Number of Samples in query_samples : ", len(query_samples))
+
         index = query_samples[0].index
         input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
         input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]
@@ -209,6 +211,9 @@ class SUT_SingleStream(SUT_base):
 
     def issue_queries(self, query_samples):
         # This function is called by the loadgen after completing the previous query
+        # 每次一个query
+        print("Number of Samples in query_samples : ", len(query_samples))
+
         index = query_samples[0].index
         input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
         input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]

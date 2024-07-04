@@ -66,7 +66,8 @@ def main():
         # Responsible for loading(Query Sample Loader) and sending samples over the network(Query Data Loader) to the server
         qsl = get_GPTJ_QSL(
             dataset_path=args.dataset_path,
-            max_examples=args.max_examples
+            max_examples=args.max_examples,
+            model_path=args.model_path
         )
         if args.network == "lon":
             qdl = GPTJ_QDL(
