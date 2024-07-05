@@ -62,14 +62,19 @@ class Dataset():
 
         source_encoded_input_ids = []
         source_encoded_attn_masks = []
-
+        # max_length = 0
         for i in range(total_samples):
+            # 都按照max_length的来padding
+            # 1. 显存浪费巨大，容易OOM：KV Cache大小跟input length成正比
+            # 2. 计算浪费？
             source_encoded = self.tokenizer(self.sources[i], return_tensors="pt",
-                                            padding=True, truncation=True,
+                                            padding="max_length", truncation=True,
                                             max_length=1919)
+            # if(source_encoded.input_ids.shape[1] > max_length):
+            #     max_length = source_encoded.input_ids.shape[1]
             source_encoded_input_ids.append(source_encoded.input_ids)
             source_encoded_attn_masks.append(source_encoded.attention_mask)
-
+        # print(max_length)
         return source_encoded_input_ids, source_encoded_attn_masks
 
     def LoadSamplesToRam(self, sample_list):
