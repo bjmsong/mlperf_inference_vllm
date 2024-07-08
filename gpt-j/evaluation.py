@@ -17,6 +17,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 def get_args():
     """Parse commandline."""
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model-path", default="EleutherAI/gpt-j-6B", help="")
     parser.add_argument("--mlperf-accuracy-file", required=True,
                         help="path to mlperf_log_accuracy.json")
     parser.add_argument("--dataset-file", required=True,
@@ -49,13 +50,13 @@ def main():
     nltk.download('punkt')
 
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
+        args.model_path,
         model_max_length=2048,
         padding_side="left",
         use_fast=False,)
     tokenizer.pad_token = tokenizer.eos_token
 
-    data_object = Dataset(dataset_path)
+    data_object = Dataset(dataset_path, model_path = args.model_path)
 
     targets = data_object.targets
 
