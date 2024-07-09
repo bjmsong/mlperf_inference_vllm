@@ -5,10 +5,11 @@ import array
 import torch
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader
-from vllm import LLM, SamplingParams
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import mlperf_loadgen as lg
 from tqdm import tqdm
 from accelerate import disk_offload
+from vllm import LLM, SamplingParams
 
 gen_kwargs = {
     "early_stopping": True,
@@ -16,7 +17,8 @@ gen_kwargs = {
     "min_new_tokens": 30,
     "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "1")), # only beam_size 4 is allowed for official submission
 }
-
+sampling_params = SamplingParams(early_stopping=True, use_beam_search=True, temperature=0,
+            best_of = int(os.environ.get("GPTJ_BEAM_SIZE", "2")), min_tokens = 30, max_tokens = 128)
 
 class SUT_base():
     def __init__(self, model_path, dtype, dataset_path, scenario, max_examples, use_gpu=False, network=None, qsl=None):
@@ -28,6 +30,7 @@ class SUT_base():
         self.max_examples = max_examples
         self.scenario = scenario
         self.qsl = qsl
+        self.batch_size = 2
         print("Loading PyTorch model...")
             
         # dtype
@@ -42,14 +45,7 @@ class SUT_base():
             self.amp_enabled = False
             self.amp_dtype = torch.float32
         try:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,
-                device_map="auto" if not self.use_gpu else None,
-                low_cpu_mem_usage=True if not self.use_gpu else False,
-                torch_dtype=self.amp_dtype,
-                offload_folder="offload" if not self.use_gpu else None,    # specify offload folder when using devices with less RAM
-                offload_state_dict = True if not self.use_gpu else False   # to have some shards of the model to be on the disk
-            )
+            self.model = LLM(self.model_path, tokenizer=self.model_path, dtype=dtype)
         except ValueError as e: 
             if "disk_offload" in str(e):
                 print("Offloading the whole model to disk...")
@@ -61,28 +57,13 @@ class SUT_base():
                 ).cpu()
                 disk_offload(model=self.model, offload_dir="offload")
 
-        # Cast the model to GPU if the flag is set.
-        if self.use_gpu:
-            print(f"Casting models to GPU...")
-            assert torch.cuda.is_available(), "torch gpu is not available, exiting..."
-            self.device = torch.device("cuda:0")
-            self.model.to(self.device)
-
-        self.model.eval()
-
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name,
-            model_max_length=1919,
-            padding_side="left",
-            use_fast=False,)
-        self.tokenizer.pad_token = self.tokenizer.eos_token
-
         # calculate the memory size taken by the model 
         self.total_mem_size = 0
         parameters = list(self.model.parameters())
         for param in tqdm(parameters):
             self.total_mem_size += param.numel() * param.element_size()
         self.total_mem_size = self.total_mem_size / (1024 ** 3)
+        print("Total Memory size: ", self.total_mem_size)
 
         # construct SUT
         self.sut = lg.ConstructSUT(self.issue_queries, self.flush_queries)
@@ -90,71 +71,55 @@ class SUT_base():
     def issue_queries(self, query_samples):
         print("Number of Samples in query_samples : ", len(query_samples))
 
-        total_samples_done = 0
-        list_prompts_tokens = []
-        list_prompts_attn_masks = []
-
-        # Pass each query to inference_call function
-        # Activates only when scenario is Offline and network mode is None
-        for i in tqdm(range(len(query_samples))):
-            index = query_samples[i].index
-            input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
-            input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]
-            text = self.qsl.data_object.sources[index]
+        for i in tqdm(range(len(query_samples)//self.batch_size)):
+            # Activates only when scenario is Offline and network mode is None
+            batch_query_samples = query_samples[i*self.batch_size: (i+1)*self.batch_size]
+            index_list = [batch_query_samples[i].index for i in range(self.batch_size)]
+            # torch.cat: 默认沿第一个维度拼接
+            # tensor (query_size, length)
+            inputs_list = [self.qsl.data_object.source_encoded_input_ids[index] for index in index_list]
             query = {
-                "input_text": text,
-                "input_ids_tensor": input_ids_tensor.tolist(),
-                "input_masks_tensor": input_masks_tensor.tolist()
+                "query_id": [batch_query_samples[i].id for i in range(self.batch_size)],
+                "input_ids_tensor": input_ids_tensor,
+                "input_masks_tensor": input_masks_tensor
             }
-            self.inference_call(query, query_samples[i].id)
-
-    def inference_call(self, query, query_id=None):
-        ''' Common for all scenarios '''
-        torch_device_type = 'cuda' if self.use_gpu else 'cpu'
-
-        input_ids_tensor = torch.tensor(query["input_ids_tensor"])
-        input_masks_tensor = torch.tensor(query["input_masks_tensor"])
-
-        # Moves the tensor to CPU or GPU as per argument passed by user
-        input_ids_tensor = input_ids_tensor.to(torch_device_type)
-        input_masks_tensor = input_masks_tensor.to(torch_device_type)               
-
-        # amp_enabled: 启用混合精度（Automatic Mixed Precision，AMP）
-        with torch.inference_mode(), torch.autocast(device_type=torch_device_type, enabled=self.amp_enabled, dtype=self.amp_dtype if self.amp_enabled else None):
-            input_batch = dict()
-            input_batch['input_ids'] = input_ids_tensor
-            input_batch['attention_mask'] = input_masks_tensor
-
-            output_batch = self.model.generate(# takes Long and Int tensor datatype only
-                **input_batch, **gen_kwargs, pad_token_id=self.tokenizer.eos_token_id)
-
-            input_batch_lengths = [x.shape[0]
-                                   for x in input_batch["input_ids"]]
-
-            output_batch_lengths = [x.shape[0] for x in output_batch]
-
-            output_batch_truncated = []
-            for data, source_len in zip(output_batch, input_batch_lengths):
-                output_batch_truncated.append(data[source_len:])
-
-            output_batch_truncated = torch.stack(output_batch_truncated)
             
-            # Loadgen monitors the reponse in corresponding functions
-            if ((self.scenario == "SingleStream" or self.scenario == "Server") and self.network == None):
-                return output_batch_truncated
+            self.inference_call(query)
 
-            pred_output_batch = output_batch_truncated.cpu().numpy()
+    def inference_call(self, query):
+        ''' Common for all scenarios '''
+        input_ids_tensor = query["input_ids_tensor"]
+        input_masks_tensor = query["input_masks_tensor"]
 
-            decoded_outputs = [self.tokenizer.decode(output, skip_special_tokens=True) for output in pred_output_batch]
-            response_text = decoded_outputs[0]
+        output_batch = self.model.generate(inputs=prompts, sampling_params=sampling_params)
+
+        input_batch_lengths = [x.shape[0] for x in input_ids_tensor]
+
+        output_batch_lengths = [x.shape[0] for x in output_batch]
+
+        output_batch_truncated = []
+        for data, source_len in zip(output_batch, input_batch_lengths):
+            output_batch_truncated.append(data[source_len:])
+
+        output_batch_truncated = torch.stack(output_batch_truncated)
+        
+        # Loadgen monitors the reponse in corresponding functions
+        if ((self.scenario == "SingleStream" or self.scenario == "Server") and self.network == None):
+            return output_batch_truncated
+
+        pred_output_batch = output_batch_truncated.cpu().numpy()
+
+        decoded_outputs = [self.tokenizer.decode(output, skip_special_tokens=True) for output in pred_output_batch]
+        for i in range(self.batch_size):
+            response_text = decoded_outputs[i]
 
             # Loadgen monitors the response in GPT_QDL
             if self.network == "sut":
                 return {"pred_output_batch":pred_output_batch.tolist(), "response_text": response_text}
 
-            response_array = array.array("B", pred_output_batch[0].tobytes())
+            response_array = array.array("B", pred_output_batch[i].tobytes())
             bi = response_array.buffer_info()
-            response = lg.QuerySampleResponse(query_id, bi[0], bi[1])
+            response = lg.QuerySampleResponse(query["query_id"][i], bi[0], bi[1])
             lg.QuerySamplesComplete([response])
 
     def flush_queries(self):
@@ -179,6 +144,8 @@ class SUT_Server(SUT_base):
 
     def issue_queries(self, query_samples):
         # The issue queries function is called multiple times by the loadgen as per Poisson Distribution
+        print("Number of Samples in query_samples : ", len(query_samples))
+
         index = query_samples[0].index
         input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
         input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]
@@ -205,6 +172,9 @@ class SUT_SingleStream(SUT_base):
 
     def issue_queries(self, query_samples):
         # This function is called by the loadgen after completing the previous query
+        # 每次一个query
+        print("Number of Samples in query_samples : ", len(query_samples))
+
         index = query_samples[0].index
         input_ids_tensor = self.qsl.data_object.source_encoded_input_ids[index]
         input_masks_tensor = self.qsl.data_object.source_encoded_attn_masks[index]

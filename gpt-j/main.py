@@ -4,7 +4,7 @@ import argparse
 import os
 import math
 import sys
-from backend_PyTorch_batch import get_SUT
+from backend_vllm import get_SUT
 from GPTJ_QDL import GPTJ_QDL
 from GPTJ_QSL import get_GPTJ_QSL
 

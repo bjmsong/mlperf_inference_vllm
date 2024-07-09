@@ -14,9 +14,9 @@
                 "--dataset-path=gpt-j/data/cnn_eval.json",
                 "--gpu",
                 "--dtype=float16",
-                // "--max_examples=50",
+                "--max_examples=10",
                 "--user_conf=gpt-j/user.conf",
-                "--accuracy",
+                // "--accuracy",
                 "--mlperf_conf=gpt-j/mlperf.conf"
             ]   
         }
