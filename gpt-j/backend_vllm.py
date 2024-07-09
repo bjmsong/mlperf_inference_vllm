@@ -57,14 +57,6 @@ class SUT_base():
                 ).cpu()
                 disk_offload(model=self.model, offload_dir="offload")
 
-        # calculate the memory size taken by the model 
-        self.total_mem_size = 0
-        parameters = list(self.model.parameters())
-        for param in tqdm(parameters):
-            self.total_mem_size += param.numel() * param.element_size()
-        self.total_mem_size = self.total_mem_size / (1024 ** 3)
-        print("Total Memory size: ", self.total_mem_size)
-
         # construct SUT
         self.sut = lg.ConstructSUT(self.issue_queries, self.flush_queries)
 
@@ -75,23 +67,19 @@ class SUT_base():
             # Activates only when scenario is Offline and network mode is None
             batch_query_samples = query_samples[i*self.batch_size: (i+1)*self.batch_size]
             index_list = [batch_query_samples[i].index for i in range(self.batch_size)]
-            # torch.cat: 默认沿第一个维度拼接
-            # tensor (query_size, length)
-            inputs_list = [self.qsl.data_object.source_encoded_input_ids[index] for index in index_list]
+            inputs_list = [self.qsl.data_object.sources[index] for index in index_list]
             query = {
                 "query_id": [batch_query_samples[i].id for i in range(self.batch_size)],
-                "input_ids_tensor": input_ids_tensor,
-                "input_masks_tensor": input_masks_tensor
+                "inputs_list": inputs_list
             }
             
             self.inference_call(query)
 
     def inference_call(self, query):
         ''' Common for all scenarios '''
-        input_ids_tensor = query["input_ids_tensor"]
-        input_masks_tensor = query["input_masks_tensor"]
+        inputs_list = query["inputs_list"]
 
-        output_batch = self.model.generate(inputs=prompts, sampling_params=sampling_params)
+        output_batch = self.model.generate(prompts=inputs_list, sampling_params=sampling_params)
 
         input_batch_lengths = [x.shape[0] for x in input_ids_tensor]
 
