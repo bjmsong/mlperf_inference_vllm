@@ -18,7 +18,7 @@ gen_kwargs = {
     "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "1")), # only beam_size 4 is allowed for official submission
 }
 sampling_params = SamplingParams(early_stopping=True, use_beam_search=True, temperature=0,
-            best_of = int(os.environ.get("GPTJ_BEAM_SIZE", "2")), min_tokens = 30, max_tokens = 128)
+            best_of = int(os.environ.get("GPTJ_BEAM_SIZE", "4")), min_tokens = 30, max_tokens = 128)
 
 class SUT_base():
     def __init__(self, model_path, dtype, dataset_path, scenario, max_examples, use_gpu=False, network=None, qsl=None):
@@ -30,7 +30,7 @@ class SUT_base():
         self.max_examples = max_examples
         self.scenario = scenario
         self.qsl = qsl
-        self.batch_size = 2
+        self.batch_size = 100
         print("Loading PyTorch model...")
             
         # dtype
@@ -77,35 +77,17 @@ class SUT_base():
 
     def inference_call(self, query):
         ''' Common for all scenarios '''
-        inputs_list = query["inputs_list"]
+        output_batch = self.model.generate(prompts=query["inputs_list"], sampling_params=sampling_params)
 
-        output_batch = self.model.generate(prompts=inputs_list, sampling_params=sampling_params)
-
-        input_batch_lengths = [x.shape[0] for x in input_ids_tensor]
-
-        output_batch_lengths = [x.shape[0] for x in output_batch]
-
-        output_batch_truncated = []
-        for data, source_len in zip(output_batch, input_batch_lengths):
-            output_batch_truncated.append(data[source_len:])
-
-        output_batch_truncated = torch.stack(output_batch_truncated)
-        
-        # Loadgen monitors the reponse in corresponding functions
-        if ((self.scenario == "SingleStream" or self.scenario == "Server") and self.network == None):
-            return output_batch_truncated
-
-        pred_output_batch = output_batch_truncated.cpu().numpy()
-
-        decoded_outputs = [self.tokenizer.decode(output, skip_special_tokens=True) for output in pred_output_batch]
         for i in range(self.batch_size):
-            response_text = decoded_outputs[i]
+            response_text = output_batch[i].outputs[0].text
+            pred_output_batch = np.array(output_batch[i].outputs[0].token_ids)
 
             # Loadgen monitors the response in GPT_QDL
             if self.network == "sut":
                 return {"pred_output_batch":pred_output_batch.tolist(), "response_text": response_text}
 
-            response_array = array.array("B", pred_output_batch[i].tobytes())
+            response_array = array.array("B", pred_output_batch.tobytes())
             bi = response_array.buffer_info()
             response = lg.QuerySampleResponse(query["query_id"][i], bi[0], bi[1])
             lg.QuerySamplesComplete([response])
