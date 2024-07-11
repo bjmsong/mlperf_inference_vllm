@@ -67,18 +67,19 @@ class SUT_base():
             # Activates only when scenario is Offline and network mode is None
             batch_query_samples = query_samples[i*self.batch_size: (i+1)*self.batch_size]
             index_list = [batch_query_samples[i].index for i in range(self.batch_size)]
-            inputs_list = [self.qsl.data_object.sources[index] for index in index_list]
             query = {
                 "query_id": [batch_query_samples[i].id for i in range(self.batch_size)],
-                "inputs_list": inputs_list
+                # "inputs_list": [self.qsl.data_object.sources[index] for index in index_list],
+                "input_ids_list": [self.qsl.data_object.source_encoded_input_ids[index] for index in index_list] 
             }
             
             self.inference_call(query)
 
     def inference_call(self, query):
         ''' Common for all scenarios '''
-        output_batch = self.model.generate(prompts=query["inputs_list"], sampling_params=sampling_params)
-
+        # output_batch = self.model.generate(prompts=query["inputs_list"], sampling_params=sampling_params)
+        output_batch = self.model.generate(prompt_token_ids=query["input_ids_list"], sampling_params=sampling_params)
+        
         for i in range(self.batch_size):
             response_text = output_batch[i].outputs[0].text
             pred_output_batch = np.array(output_batch[i].outputs[0].token_ids)

@@ -72,7 +72,7 @@ class Dataset():
                                             max_length=1919)
             # if(source_encoded.input_ids.shape[1] > max_length):
             #     max_length = source_encoded.input_ids.shape[1]
-            source_encoded_input_ids.append(source_encoded.input_ids)
+            source_encoded_input_ids.append(source_encoded.input_ids.tolist()[0])
             source_encoded_attn_masks.append(source_encoded.attention_mask)
         # print(max_length)
         return source_encoded_input_ids, source_encoded_attn_masks
