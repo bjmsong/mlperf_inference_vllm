@@ -30,7 +30,7 @@ class SUT_base():
         self.max_examples = max_examples
         self.scenario = scenario
         self.qsl = qsl
-        self.batch_size = 100
+        self.batch_size = 50
         print("Loading PyTorch model...")
             
         # dtype
@@ -80,6 +80,7 @@ class SUT_base():
         # output_batch = self.model.generate(prompts=query["inputs_list"], sampling_params=sampling_params)
         output_batch = self.model.generate(prompt_token_ids=query["input_ids_list"], sampling_params=sampling_params)
         
+        # TODO: 这个循环可以多进程吗
         for i in range(self.batch_size):
             response_text = output_batch[i].outputs[0].text
             pred_output_batch = np.array(output_batch[i].outputs[0].token_ids)
