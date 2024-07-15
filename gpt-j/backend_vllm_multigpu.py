@@ -30,7 +30,7 @@ class SUT_base():
         self.max_examples = max_examples
         self.scenario = scenario
         self.qsl = qsl
-        self.batch_size = 50
+        self.batch_size = 350
         print("Loading PyTorch model...")
             
         # dtype
@@ -45,7 +45,7 @@ class SUT_base():
             self.amp_enabled = False
             self.amp_dtype = torch.float32
         try:
-            self.model = LLM(self.model_path, tokenizer=self.model_path, dtype=dtype)
+            self.model = LLM(self.model_path, tokenizer=self.model_path, dtype=dtype, tensor_parallel_size=2)
         except ValueError as e: 
             if "disk_offload" in str(e):
                 print("Offloading the whole model to disk...")
@@ -69,8 +69,8 @@ class SUT_base():
             index_list = [batch_query_samples[i].index for i in range(self.batch_size)]
             query = {
                 "query_id": [batch_query_samples[i].id for i in range(self.batch_size)],
-                "inputs_list": [self.qsl.data_object.sources[index] for index in index_list],
-                "target_list": [self.qsl.data_object.targets[index] for index in index_list],
+                # "inputs_list": [self.qsl.data_object.sources[index] for index in index_list],
+                # "target_list": [self.qsl.data_object.targets[index] for index in index_list],
                 "input_ids_list": [self.qsl.data_object.source_encoded_input_ids[index] for index in index_list] 
             }
             
@@ -79,6 +79,7 @@ class SUT_base():
     def inference_call(self, query):
         ''' Common for all scenarios '''
         # output_batch = self.model.generate(prompts=query["inputs_list"], sampling_params=sampling_params)
+        # 会显示batch处理的进度
         output_batch = self.model.generate(prompt_token_ids=query["input_ids_list"], sampling_params=sampling_params)
         
         # with open("output.txt", mode='a') as f:
@@ -91,6 +92,8 @@ class SUT_base():
         #         f.write(output_batch[i].outputs[0].text + "\n")
         #         f.write("-" * 20 + "\n")  
 
+        # 这个循环跟generate()比，耗时很少，不值得优化
+        print("Start submit")
         for i in range(self.batch_size):
             response_text = output_batch[i].outputs[0].text
             pred_output_batch = np.array(output_batch[i].outputs[0].token_ids)
@@ -103,6 +106,7 @@ class SUT_base():
             bi = response_array.buffer_info()
             response = lg.QuerySampleResponse(query["query_id"][i], bi[0], bi[1])
             lg.QuerySamplesComplete([response])
+        print("End submit")
 
     def flush_queries(self):
         pass

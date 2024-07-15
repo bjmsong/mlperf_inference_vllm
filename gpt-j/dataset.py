@@ -70,9 +70,9 @@ class Dataset():
             # padding = "max_length": using transformers, batch_size > 1
             # padding = False: using vLLM
             source_encoded = self.tokenizer(self.sources[i], return_tensors="pt",
-                                            padding=True, truncation=True,
+                                            padding=False, truncation=True,
                                             max_length=1919)  # 1919 + 128 = 2047 < 2048
-            # source_encoded_input_ids.append(source_encoded.input_ids.tolist()[0])
+            source_encoded_input_ids.append(source_encoded.input_ids.tolist()[0])
             
             # with open("input_vllm.txt", mode='a') as f:
             #     f.write("Prompt: \n")
@@ -84,7 +84,7 @@ class Dataset():
             #     f.write("-" * 20 + "\n")  
 
             # when using transformers
-            source_encoded_input_ids.append(source_encoded.input_ids)
+            # source_encoded_input_ids.append(source_encoded.input_ids)
             source_encoded_attn_masks.append(source_encoded.attention_mask)
         return source_encoded_input_ids, source_encoded_attn_masks
 
