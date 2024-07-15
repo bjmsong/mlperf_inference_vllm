@@ -14,7 +14,7 @@ gen_kwargs = {
     "early_stopping": True,
     "max_new_tokens": 128,
     "min_new_tokens": 30,
-    "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "4")), # only beam_size 4 is allowed for official submission
+    "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "1")), # only beam_size 4 is allowed for official submission
 }
 
 
@@ -28,7 +28,7 @@ class SUT_base():
         self.max_examples = max_examples
         self.scenario = scenario
         self.qsl = qsl
-        self.batch_size = 1
+        self.batch_size = 2
         print("Loading PyTorch model...")
             
         # dtype
@@ -150,6 +150,13 @@ class SUT_base():
             pred_output_batch = output_batch_truncated.cpu().numpy()
 
             decoded_outputs = [self.tokenizer.decode(output, skip_special_tokens=True) for output in pred_output_batch]
+            
+            with open("output_batch.txt", mode='a') as f:
+                for i in range(self.batch_size):
+                    f.write("Output:\n")
+                    f.write(decoded_outputs[i] + "\n")
+                    f.write("-" * 20 + "\n")  
+                       
             for i in range(self.batch_size):
                 response_text = decoded_outputs[i]
 

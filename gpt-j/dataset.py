@@ -62,19 +62,30 @@ class Dataset():
 
         source_encoded_input_ids = []
         source_encoded_attn_masks = []
-        # max_length = 0
         for i in range(total_samples):
             # 都按照max_length的来padding
             # 1. 显存浪费巨大，容易OOM：KV Cache大小跟input length成正比
             # 2. 计算浪费？
+            # padding = True: using transformers, batch_size = 1
+            # padding = "max_length": using transformers, batch_size > 1
+            # padding = False: using vLLM
             source_encoded = self.tokenizer(self.sources[i], return_tensors="pt",
-                                            padding=False, truncation=True,
+                                            padding=True, truncation=True,
                                             max_length=1919)  # 1919 + 128 = 2047 < 2048
-            # if(source_encoded.input_ids.shape[1] > max_length):
-            #     max_length = source_encoded.input_ids.shape[1]
-            source_encoded_input_ids.append(source_encoded.input_ids.tolist()[0])
+            # source_encoded_input_ids.append(source_encoded.input_ids.tolist()[0])
+            
+            # with open("input_vllm.txt", mode='a') as f:
+            #     f.write("Prompt: \n")
+            #     f.write(self.sources[i] + "\n")
+            #     f.write("Token:\n")
+            #     for id in source_encoded_input_ids[i]:
+            #         f.write(str(id) + ",")
+            #     f.write("\n")
+            #     f.write("-" * 20 + "\n")  
+
+            # when using transformers
+            source_encoded_input_ids.append(source_encoded.input_ids)
             source_encoded_attn_masks.append(source_encoded.attention_mask)
-        # print(max_length)
         return source_encoded_input_ids, source_encoded_attn_masks
 
     def LoadSamplesToRam(self, sample_list):

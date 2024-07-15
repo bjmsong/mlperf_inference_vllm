@@ -14,7 +14,7 @@ gen_kwargs = {
     "early_stopping": True,
     "max_new_tokens": 128,
     "min_new_tokens": 30,
-    "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "1")), # only beam_size 4 is allowed for official submission
+    "num_beams": int(os.environ.get("GPTJ_BEAM_SIZE", "2")), # only beam_size 4 is allowed for official submission
 }
 
 
@@ -151,6 +151,11 @@ class SUT_base():
 
             decoded_outputs = [self.tokenizer.decode(output, skip_special_tokens=True) for output in pred_output_batch]
             response_text = decoded_outputs[0]
+            
+            # with open("output_single.txt", mode='a') as f:
+            #     f.write("Output:\n")
+            #     f.write(response_text + "\n")
+            #     f.write("-" * 20 + "\n")  
 
             # Loadgen monitors the response in GPT_QDL
             if self.network == "sut":
