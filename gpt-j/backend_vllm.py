@@ -33,30 +33,7 @@ class SUT_base():
         self.batch_size = 50
         print("Loading PyTorch model...")
             
-        # dtype
-        if dtype == 'bfloat16':
-            self.amp_enabled = True
-            self.amp_dtype = torch.bfloat16
-            print("BF16 autocast")
-        elif dtype == 'float16':
-            self.amp_enabled = True
-            self.amp_dtype = torch.float16
-        else:
-            self.amp_enabled = False
-            self.amp_dtype = torch.float32
-        try:
-            self.model = LLM(self.model_path, tokenizer=self.model_path, dtype=dtype)
-        except ValueError as e: 
-            if "disk_offload" in str(e):
-                print("Offloading the whole model to disk...")
-                self.model = AutoModelForCausalLM.from_pretrained(
-                    self.model_path,
-                    low_cpu_mem_usage=True if not self.use_gpu else False,
-                    torch_dtype=self.amp_dtype,
-                    offload_state_dict = True if not self.use_gpu else False
-                ).cpu()
-                disk_offload(model=self.model, offload_dir="offload")
-
+        self.model = LLM(self.model_path, tokenizer=self.model_path, quantization="gptq", dtype=dtype) 
         # construct SUT
         self.sut = lg.ConstructSUT(self.issue_queries, self.flush_queries)
 
