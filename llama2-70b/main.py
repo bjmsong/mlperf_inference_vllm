@@ -4,7 +4,7 @@ import argparse
 import os
 import logging
 import sys
-from SUT import SUT, SUTServer
+from SUT_vllm import SUT, SUTServer
 
 sys.path.insert(0, os.getcwd())
 

@@ -26,6 +26,7 @@ from vllm import LLM, SamplingParams
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("Llama-70B-SUT")
 
+# greedy search
 gen_kwargs = {
     "early_stopping": True,
     "max_new_tokens": 1024,
@@ -34,6 +35,7 @@ gen_kwargs = {
     "do_sample": False
 }
 
+sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0)
 
 class FirstTokenStreamer(BaseStreamer):
     """ Streams first tokens to a 'holder' """
@@ -180,33 +182,14 @@ class SUT():
 
                 tik1 = time.time()
 
-                input_ids_tensor = []
-                input_masks_tensor = []
-                input_len = []
+                input_ids = []
                 for q in qitem:
-                    input_ids_tensor.append(pad(self.data_object.input_ids[q.index],
-                                                (max_seq_len - self.data_object.input_lens[q.index], 0, 0, 0),
-                                                value=self.tokenizer.pad_token_id))
-                    input_masks_tensor.append(pad(self.data_object.attention_masks[q.index],
-                                                  (max_seq_len - self.data_object.input_lens[q.index], 0, 0, 0),
-                                                 value=0))
-                    input_len.append(self.data_object.input_lens[q.index])
-                input_ids_tensor = torch.cat(input_ids_tensor)
-                input_masks_tensor = torch.cat(input_masks_tensor)
+                    input_ids.append(self.data_object.input_ids_list[q.index])   
 
-                assert input_ids_tensor.shape == input_masks_tensor.shape
-                assert input_ids_tensor.shape[0] <= self.batch_size
+                pred_output_tokens = self.model.generate(prompt_token_ids=input_ids,
+                                                   sampling_params=sampling_params)
 
                 tik2 = time.time()
-
-                pred_output_tokens = self.model.generate(
-                    input_ids=input_ids_tensor,
-                    attention_mask=input_masks_tensor,
-                    pad_token_id=self.tokenizer.pad_token_id,
-                    **gen_kwargs
-                )
-
-                tik3 = time.time()
 
                 processed_output = self.data_object.postProcess(pred_output_tokens,
                                                                 input_seq_lens=input_len,
@@ -225,9 +208,8 @@ class SUT():
                 self.sample_counter += len(qitem)
                 print(f"Samples run: {self.sample_counter}")
                 if tik1:
-                    print(f"\tBatchMaker time: {tik2 - tik1}")
-                    print(f"\tInference time: {tik3 - tik2}")
-                    print(f"\tPostprocess time: {tok - tik3}")
+                    print(f"\tInference time: {tik2 - tik1}")
+                    print(f"\tPostprocess time: {tok - tik2}")
                     print(f"\t==== Total time: {tok - tik1}")
                 else:
                     print(f"\tLoaded from cache: {_p}")

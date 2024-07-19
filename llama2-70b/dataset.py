@@ -54,6 +54,7 @@ class Dataset():
         input_tokens = processed_data['tok_input']
 
         self.input_ids = []
+        self.input_ids_list = []
         self.input_lens = []
         self.attention_masks = []
 
@@ -61,6 +62,7 @@ class Dataset():
             input_ids = torch.tensor(ids, dtype=torch.int32).view(1,-1).to(self.device)
             attn_mask = torch.ones_like(input_ids)
             self.input_ids.append(input_ids)
+            self.input_ids_list.append(ids)
             self.attention_masks.append(attn_mask)
             self.input_lens.append(input_ids.shape[-1])
         print("Finished loading dataset.")

@@ -198,6 +198,7 @@ class SUT():
 
                 tik2 = time.time()
 
+                # pred_output_tokens: tensor, [batch_size, max_output_length] 
                 pred_output_tokens = self.model.generate(
                     input_ids=input_ids_tensor,
                     attention_mask=input_masks_tensor,

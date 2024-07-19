@@ -37,12 +37,13 @@
                 "--scenario=Offline",
                 "--model-path=/root/autodl-tmp/model_dir",
                 "--dataset-path=llama2-70b/processed-data.pkl",
-                "--total-sample-count=200",
+                "--total-sample-count=50",
                 "--user-conf=llama2-70b/user.conf",
                 "--mlperf-conf=llama2-70b/mlperf.conf",
                 "--output-log-dir=llama2-70b/offline-logs",
-                "--device=cpu",
+                "--device=cuda:0",
                 "--num-workers=1",
+                "--batch-size=2",
                 "--use-cached-outputs=True"
             ]   
         }
