@@ -7,3 +7,11 @@ loadgen/__pycache__/
 loadgen/mlperf_loadgen.egg-info/
 loadgen/generated/
 */.cache/
+llama2-70b/open-orca
+llama2-70b/*.pkl
+llama2-70b/offline-logs
+llama2-70b/run_outputs
+llama2-70b/output-logs
+llama2-70b/offline-accuracy-logs
+llama2-70b/*.log
+llama2-70b/__pycache__

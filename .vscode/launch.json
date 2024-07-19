@@ -1,3 +1,28 @@
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "python": "/root/miniconda3/envs/llm/bin/python",
+//             "name": "Python: Current file",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "gpt-j/main.py",
+//             "console": "integratedTerminal",
+//             "args": [                
+//                 "--scenario=Offline", 
+//                 "--model-path=/root/autodl-tmp/model/checkpoint-final/",
+//                 "--dataset-path=gpt-j/data/cnn_eval.json",
+//                 "--gpu",
+//                 "--dtype=float16",
+//                 "--max_examples=10",
+//                 "--user_conf=gpt-j/user.conf",
+//                 // "--accuracy",
+//                 "--mlperf_conf=gpt-j/mlperf.conf"
+//             ]   
+//         }
+//     ]
+// }
+
 {
     "version": "0.2.0",
     "configurations": [
@@ -6,22 +31,24 @@
             "name": "Python: Current file",
             "type": "python",
             "request": "launch",
-            "program": "gpt-j/main.py",
+            "program": "llama2-70b/main.py",
             "console": "integratedTerminal",
             "args": [                
-                "--scenario=Offline", 
-                "--model-path=/root/autodl-tmp/model/checkpoint-final/",
-                "--dataset-path=gpt-j/data/cnn_eval.json",
-                "--gpu",
-                "--dtype=float16",
-                "--max_examples=10",
-                "--user_conf=gpt-j/user.conf",
-                // "--accuracy",
-                "--mlperf_conf=gpt-j/mlperf.conf"
+                "--scenario=Offline",
+                "--model-path=/root/autodl-tmp/model_dir",
+                "--dataset-path=llama2-70b/processed-data.pkl",
+                "--total-sample-count=200",
+                "--user-conf=llama2-70b/user.conf",
+                "--mlperf-conf=llama2-70b/mlperf.conf",
+                "--output-log-dir=llama2-70b/offline-logs",
+                "--device=cpu",
+                "--num-workers=1",
+                "--use-cached-outputs=True"
             ]   
         }
     ]
 }
+
 
 
 // Python/C++联合debug
