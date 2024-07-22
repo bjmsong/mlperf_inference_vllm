@@ -34,8 +34,10 @@ gen_kwargs = {
     "num_beams": 1,
     "do_sample": False
 }
-
-vllm_kwargs = {"gpu_memory_utilization": 0.95}
+vllm_kwargs = {
+            "gpu_memory_utilization": 0.95,
+            "tensor_parallel_size": 1
+}
 sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0)
 
 class FirstTokenStreamer(BaseStreamer):
