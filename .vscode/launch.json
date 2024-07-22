@@ -43,8 +43,7 @@
                 "--output-log-dir=llama2-70b/offline-logs",
                 "--device=cuda:0",
                 "--num-workers=1",
-                "--batch-size=2",
-                "--use-cached-outputs=True"
+                "--batch-size=4"
             ]   
         }
     ]

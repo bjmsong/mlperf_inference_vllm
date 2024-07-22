@@ -194,28 +194,28 @@ class SUT():
 
                 tik2 = time.time()
 
-                max_output_len = 1
-                for pred in pred_output:
-                    output_len = len(pred.outputs[0].token_ids)
-                    if max_output_len < output_len:
-                        max_output_len = output_len
+                # max_output_len = 1
+                # for pred in pred_output:
+                #     output_len = len(pred.outputs[0].token_ids)
+                #     if max_output_len < output_len:
+                #         max_output_len = output_len
 
-                token_ids_tensor = []
-                input_len = []
-                for pred in pred_output:
-                    token_ids_tensor.append(pad(torch.tensor(pred.outputs[0].token_ids).view(1, -1).to(self.device),
-                                                (max_output_len - len(pred.outputs[0].token_ids), 0, 0, 0),
-                                                value=self.tokenizer.pad_token_id))
-                    input_len.append(len(pred.prompt_token_ids))
-                pred_output_tokens = torch.cat(token_ids_tensor)
+                # token_ids_tensor = []
+                # input_len = []
+                # for pred in pred_output:
+                #     token_ids_tensor.append(pad(torch.tensor(pred.outputs[0].token_ids).view(1, -1).to(self.device),
+                #                                 (max_output_len - len(pred.outputs[0].token_ids), 0, 0, 0),
+                #                                 value=self.tokenizer.pad_token_id))
+                #     input_len.append(len(pred.prompt_token_ids))
+                # pred_output_tokens = torch.cat(token_ids_tensor)
 
-                processed_output = self.data_object.postProcess(pred_output_tokens,
-                                                                input_seq_lens=input_len,
-                                                                query_id_list=query_ids)
+                # processed_output = self.data_object.postProcess(pred_output_tokens,
+                #                                                 input_seq_lens=input_len,
+                #                                                 query_id_list=query_ids)
 
             for i in range(len(qitem)):
-                n_tokens = processed_output[i].shape[0]
-                response_array = array.array("B", processed_output[i].tobytes())
+                n_tokens = len(pred_output[i].outputs[0].token_ids)
+                response_array = array.array("B", np.array(pred_output[i].outputs[0].token_ids).tobytes())
                 bi = response_array.buffer_info()
                 response = [lg.QuerySampleResponse(qitem[i].id, bi[0], bi[1], n_tokens)]
                 lg.QuerySamplesComplete(response)

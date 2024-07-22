@@ -65,6 +65,10 @@ class Dataset():
             self.input_ids_list.append(ids)
             self.attention_masks.append(attn_mask)
             self.input_lens.append(input_ids.shape[-1])
+
+        self.questions = list(processed_data["question"])
+        self.outputs = list(processed_data["output"])
+        
         print("Finished loading dataset.")
 
 
