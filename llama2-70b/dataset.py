@@ -82,7 +82,10 @@ class Dataset():
             preds.append(pred)
         """
         # Everything is padded to max_len (1024), so prune the input and parse to numpy
-        output_seq = out_tokens[:, 1024:].cpu().numpy()
+        # when using transformers
+        #output_seq = out_tokens[:, 1024:].cpu().numpy()
+        # when using vllm
+        output_seq = out_tokens.cpu().numpy()
         assert len(query_id_list) == output_seq.shape[0]
 
         # Save outputs

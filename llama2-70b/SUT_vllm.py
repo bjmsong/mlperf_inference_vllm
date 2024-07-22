@@ -35,6 +35,7 @@ gen_kwargs = {
     "do_sample": False
 }
 
+vllm_kwargs = {"gpu_memory_utilization": 0.95}
 sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0)
 
 class FirstTokenStreamer(BaseStreamer):
@@ -185,11 +186,26 @@ class SUT():
                 input_ids = []
                 for q in qitem:
                     input_ids.append(self.data_object.input_ids_list[q.index])   
-
-                pred_output_tokens = self.model.generate(prompt_token_ids=input_ids,
+                
+                pred_output = self.model.generate(prompt_token_ids=input_ids,
                                                    sampling_params=sampling_params)
 
                 tik2 = time.time()
+
+                max_output_len = 1
+                for pred in pred_output:
+                    output_len = len(pred.outputs[0].token_ids)
+                    if max_output_len < output_len:
+                        max_output_len = output_len
+
+                token_ids_tensor = []
+                input_len = []
+                for pred in pred_output:
+                    token_ids_tensor.append(pad(torch.tensor(pred.outputs[0].token_ids).view(1, -1).to(self.device),
+                                                (max_output_len - len(pred.outputs[0].token_ids), 0, 0, 0),
+                                                value=self.tokenizer.pad_token_id))
+                    input_len.append(len(pred.prompt_token_ids))
+                pred_output_tokens = torch.cat(token_ids_tensor)
 
                 processed_output = self.data_object.postProcess(pred_output_tokens,
                                                                 input_seq_lens=input_len,
@@ -217,7 +233,7 @@ class SUT():
 
     def load_model(self):
 
-        self.model = LLM(self.model_path, tokenizer=self.model_path) 
+        self.model = LLM(self.model_path, tokenizer=self.model_path, **vllm_kwargs) 
         
         print("Loaded model")
 
