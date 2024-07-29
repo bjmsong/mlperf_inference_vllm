@@ -1,9 +1,9 @@
 ## Background
 - MLperf Inference v4.0引入了LLaMA2-70B，任务是Question-Answering，数据集是Open Orca。
 - 目标精度如下：
-ROUGE-1 = 44.4312
-ROUGE-2 = 22.0352
-ROUGE-L = 28.6162
+  - ROUGE-1 = 44.4312
+  - ROUGE-2 = 22.0352
+  - ROUGE-L = 28.6162
 - 官方提供了Loadgen模块，负责生成query，收集模型输出结果，评测精度及性能。
 
 
@@ -31,9 +31,9 @@ ROUGE-L = 28.6162
 ### Accuracy
 |                      | Baseline |Optimized|
 | ----------------           | ---------   |---------|
-| rouge1        | 43.6          | 47.4      |
-| rouge1        | 23.1          | 24.9      |
-| rougeL        | 28.3          | 31.5      |
+| rouge-1        | 43.6          | 47.4      |
+| rouge-2        | 23.1          | 24.9      |
+| rouge-L        | 28.3          | 31.5      |
 
 
 ## Quick Start
