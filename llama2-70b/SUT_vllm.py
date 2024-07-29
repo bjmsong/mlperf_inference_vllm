@@ -37,8 +37,13 @@ gen_kwargs = {
 vllm_kwargs = {
             "gpu_memory_utilization": 0.95,
             "tensor_parallel_size": 1
+            # "speculative_model": "/root/autodl-tmp/llama2-7b-int4",
+            # "num_speculative_tokens": 5,
+            # "use_v2_block_manager": True
+            # "kv_cache_dtype": "fp8_e4m3"
+            # "quantization": "gptq" # 这个参数加了反而变慢
 }
-sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0)
+sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0, top_p=0.95)
 
 class FirstTokenStreamer(BaseStreamer):
     """ Streams first tokens to a 'holder' """
@@ -135,6 +140,7 @@ class SUT():
         self.use_cached_outputs = use_cached_outputs
         self.sample_counter = 0
         self.sample_counter_lock = threading.Lock()
+        self.model_lock = threading.Lock()
 
 
     def start(self):
@@ -156,7 +162,7 @@ class SUT():
     def process_queries(self):
         """Processor of the queued queries. User may choose to add batching logic """
         
-        print(f"{time.ctime()} --- Start to process queries in : {os.getpid()} \n")
+        print(f"{time.ctime()} --- Start to process queries in Thread: {threading.get_ident()} \n")
         
         # 只要子线程不结束，会一直执行下面的代码(轮巡), 一旦query_queue队列里面有数据，就会进行处理
         while True:
@@ -189,7 +195,8 @@ class SUT():
                 for q in qitem:
                     input_ids.append(self.data_object.input_ids_list[q.index])   
                 
-                pred_output = self.model.generate(prompt_token_ids=input_ids,
+                with self.model_lock:
+                    pred_output = self.model.generate(prompt_token_ids=input_ids,
                                                    sampling_params=sampling_params)
 
                 tik2 = time.time()
@@ -219,6 +226,7 @@ class SUT():
                 bi = response_array.buffer_info()
                 response = [lg.QuerySampleResponse(qitem[i].id, bi[0], bi[1], n_tokens)]
                 lg.QuerySamplesComplete(response)
+            # time.sleep(3)
 
             tok = time.time()
 
@@ -226,9 +234,9 @@ class SUT():
                 self.sample_counter += len(qitem)
                 print(f"Samples run: {self.sample_counter}")
                 if tik1:
-                    print(f"\tInference time: {tik2 - tik1}")
-                    print(f"\tPostprocess time: {tok - tik2}")
-                    print(f"\t==== Total time: {tok - tik1}")
+                    print(f"\tInference time: {tik2 - tik1} s")
+                    print(f"\tPostprocess time: {tok - tik2} s")
+                    print(f"\t==== Total time: {tok - tik1} s")
                 else:
                     print(f"\tLoaded from cache: {_p}")
 
@@ -270,6 +278,7 @@ class SUT():
         list_prompts_tokens = []
         list_prompts_attn_masks = []
 
+        print(f"{time.ctime()} --- Main Thread: {threading.get_ident()} \n")
         print(f"IssueQuery started with {len(query_samples)} samples")
         while len(query_samples) > 0:
             self.query_queue.put(query_samples[:self.batch_size])  # 每个线程一次处理一个batch_size的query

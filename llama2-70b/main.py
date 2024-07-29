@@ -74,7 +74,7 @@ def main():
         dataset_path=args.dataset_path,
         total_sample_count=args.total_sample_count,
         device=args.device,
-        use_cached_outputs=args.use_cached_outputs,
+        workers = args.num_workers
     )
 
     # Start sut before loadgen starts
