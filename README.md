@@ -12,7 +12,6 @@
 |                      | Baseline |Optimized|
 | ----------------           | ---------   |---------|
 | SDK            | Transformers          |vLLM      |
-| Multi Thread                        | Yes          |Yes      |
 | Quantization Method         | GPTQ          | GPTQ      |
 | Date Type of Model Weights                 | INT4          |INT4      |
 | GPU Num  | 1          |2      |
