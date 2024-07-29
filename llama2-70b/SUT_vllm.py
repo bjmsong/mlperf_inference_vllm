@@ -36,11 +36,11 @@ gen_kwargs = {
 }
 vllm_kwargs = {
             "gpu_memory_utilization": 0.95,
-            "tensor_parallel_size": 1
+            "tensor_parallel_size": 1,
             # "speculative_model": "/root/autodl-tmp/llama2-7b-int4",
             # "num_speculative_tokens": 5,
             # "use_v2_block_manager": True
-            # "kv_cache_dtype": "fp8_e4m3"
+            "kv_cache_dtype": "fp8_e4m3"
             # "quantization": "gptq" # 这个参数加了反而变慢
 }
 sampling_params = SamplingParams(min_tokens = 1, max_tokens = 1024, temperature=0, top_p=0.95)
@@ -201,6 +201,7 @@ class SUT():
 
                 tik2 = time.time()
 
+                print(f"avg input length is: {np.mean([len(promot) for promot in input_ids])}") 
                 # max_output_len = 1
                 # for pred in pred_output:
                 #     output_len = len(pred.outputs[0].token_ids)
@@ -220,14 +221,17 @@ class SUT():
                 #                                                 input_seq_lens=input_len,
                 #                                                 query_id_list=query_ids)
 
+            sum_tokens = 0
             for i in range(len(qitem)):
                 n_tokens = len(pred_output[i].outputs[0].token_ids)
                 response_array = array.array("B", np.array(pred_output[i].outputs[0].token_ids).tobytes())
                 bi = response_array.buffer_info()
                 response = [lg.QuerySampleResponse(qitem[i].id, bi[0], bi[1], n_tokens)]
                 lg.QuerySamplesComplete(response)
+                sum_tokens += n_tokens
             # time.sleep(3)
-
+            print(f"avg output length is: {sum_tokens/len(qitem)}") 
+            
             tok = time.time()
 
             with self.sample_counter_lock:
