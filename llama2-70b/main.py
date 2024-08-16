@@ -4,6 +4,7 @@ import argparse
 import os
 import logging
 import sys
+sys.path.insert(0, "/root/autodl-tmp/vllm")
 from SUT_vllm import SUT, SUTServer
 
 sys.path.insert(0, os.getcwd())

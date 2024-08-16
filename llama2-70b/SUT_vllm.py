@@ -34,7 +34,8 @@ gen_kwargs = {
     "num_beams": 1,
     "do_sample": False
 }
-vllm_kwargs = {
+engine_kwargs = {
+            "disable_log_stats": False,
             "gpu_memory_utilization": 0.95,
             "tensor_parallel_size": 1,
             # "speculative_model": "/root/autodl-tmp/llama2-7b-int4",
@@ -247,7 +248,7 @@ class SUT():
 
     def load_model(self):
 
-        self.model = LLM(self.model_path, tokenizer=self.model_path, **vllm_kwargs) 
+        self.model = LLM(self.model_path, tokenizer=self.model_path, **engine_kwargs) 
         
         print("Loaded model")
 
